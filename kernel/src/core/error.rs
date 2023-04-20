@@ -3,6 +3,10 @@ use tezos_smart_rollup::{host::RuntimeError, storage::path};
 /// Rperesents the error of the read_input functions
 #[derive(Debug)]
 pub enum ReadInputError {
+    // Input message is not for the kernel
+    NotForKernel,
+    // L1 transaction has not come from the token bridge
+    NotFromBridge,
     /// There is no more messages
     EndOfInbox,
     /// There is an error in the bytes to string deserialization
@@ -28,7 +32,6 @@ pub enum Error {
     FromBase58CheckError,
     BigIntError,
     BinError(tezos_data_encoding::enc::BinError),
-    // EntrypointError(tezos_smart_rollup_encoding::entrypoint::EntrypointError),
 }
 
 impl ToString for Error {
@@ -45,7 +48,6 @@ impl ToString for Error {
             Error::FromBase58CheckError => "Cannot convert a string to a contract address",
             Error::BigIntError => "Cannot deserialize big int",
             Error::BinError(_) => "Cannot serialize michelson to binary",
-            // Error::EntrypointError(_) => "Not a correct entrypoint",
         };
         err.to_string()
     }
@@ -66,9 +68,5 @@ register_error!(Ed25519Compact, ed25519_compact::Error);
 register_error!(PathError, path::PathError);
 register_error!(Runtime, RuntimeError);
 register_error!(BinError, tezos_data_encoding::enc::BinError);
-// register_error!(
-//     EntrypointError,
-//     tezos_smart_rollup_encoding::entrypoint::EntrypointError
-// );
 
 pub type Result<A> = std::result::Result<A, Error>;

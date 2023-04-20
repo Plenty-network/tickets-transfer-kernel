@@ -1,27 +1,31 @@
-use tezos_smart_rollup::{
-    host::Runtime, inbox::InboxMessage, kernel_entry, michelson::ticket::BytesTicket,
-};
+use crate::core::error::ReadInputError;
+use crate::core::message::Message;
+use tezos_smart_rollup::{host::Runtime, kernel_entry};
+use utils::read_input;
 
+mod constants;
 mod core;
+mod utils;
 
 pub fn entry<Host: Runtime>(host: &mut Host) {
     execute(host);
 }
 
 fn execute<Host: Runtime>(host: &mut Host) {
-    let input = host.read_input();
+    match read_input(host) {
+        Ok(message) => {
+            match message {
+                Message::Bridge(b) => host.write_debug(
+                    format!("Bridge message: {} {} {}\n", b.account, b.token, b.amount).as_str(),
+                ),
+                Message::Transfer(_) => host.write_debug("Transfer message"),
+            }
 
-    match input {
-        Err(_) | Ok(None) => (),
-        Ok(Some(msg)) => match <InboxMessage<BytesTicket>>::parse(msg.as_ref()) {
-            Ok(parsed_message) => match parsed_message {
-                (_, _) => {}
-            },
-            Err(_) => {}
-        },
+            execute(host)
+        }
+        Err(ReadInputError::EndOfInbox) => (),
+        Err(_) => execute(host),
     }
-
-    execute(host)
 }
 
 kernel_entry!(entry);
