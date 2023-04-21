@@ -1,14 +1,14 @@
 use crate::constants::{self, EXTERNAL_MESSAGE_REP};
 use crate::core::message::BridgeMessage;
-use crate::core::{error::ReadInputError, message::Message};
-use tezos_smart_rollup::michelson::{MichelsonContract, MichelsonPair};
+use crate::core::{error::*, message::Message};
+use crate::storage::{read_balance, store_balance};
 use tezos_smart_rollup::{
     host::Runtime,
     inbox::{InboxMessage, InternalInboxMessage},
-    michelson::ticket::BytesTicket,
+    michelson::{ticket::BytesTicket, MichelsonContract, MichelsonPair},
 };
 
-pub fn read_input<Host: Runtime>(host: &mut Host) -> Result<Message, ReadInputError> {
+pub fn read_input<Host: Runtime>(host: &mut Host) -> std::result::Result<Message, ReadInputError> {
     let input = host.read_input().map_err(ReadInputError::Runtime)?;
     match input {
         None => Err(ReadInputError::EndOfInbox),
@@ -26,14 +26,7 @@ pub fn read_input<Host: Runtime>(host: &mut Host) -> Result<Message, ReadInputEr
                                     {
                                         Err(ReadInputError::NotFromBridge)
                                     } else {
-                                        Ok(Message::Bridge(BridgeMessage {
-                                            account: transfer.payload.1 .0.to_b58check(),
-                                            token: String::from_utf8(
-                                                transfer.payload.0.contents().0.clone(),
-                                            )
-                                            .unwrap(),
-                                            amount: transfer.payload.0.amount_as().unwrap(),
-                                        }))
+                                        Ok(Message::Bridge(BridgeMessage::from(transfer.payload)))
                                     }
                                 }
                                 // Other internal messages can be ignored
@@ -62,4 +55,17 @@ pub fn read_input<Host: Runtime>(host: &mut Host) -> Result<Message, ReadInputEr
             }
         }
     }
+}
+
+pub fn process_bridge_message<Host: Runtime>(
+    host: &mut Host,
+    message: BridgeMessage,
+) -> Result<()> {
+    let current_balance = read_balance(host, &message.account, &message.token)?;
+    store_balance(
+        host,
+        &message.account,
+        &message.token,
+        &(current_balance + message.amount),
+    )
 }

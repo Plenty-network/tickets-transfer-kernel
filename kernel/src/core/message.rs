@@ -4,6 +4,9 @@ use crate::core::public_key::PublicKey;
 use crate::core::public_key_hash::PublicKeyHash;
 use crate::core::signature::Signature;
 use serde::Deserialize;
+use tezos_smart_rollup::michelson::{ticket::BytesTicket, MichelsonContract, MichelsonPair};
+
+use super::token::Token;
 
 #[derive(Deserialize)]
 pub enum Message {
@@ -13,16 +16,26 @@ pub enum Message {
 
 #[derive(Deserialize)]
 pub struct BridgeMessage {
-    pub account: String,
-    pub token: String,
+    pub account: PublicKeyHash,
+    pub token: Token,
     pub amount: u128,
+}
+
+impl From<MichelsonPair<BytesTicket, MichelsonContract>> for BridgeMessage {
+    fn from(michelson_payload: MichelsonPair<BytesTicket, MichelsonContract>) -> Self {
+        BridgeMessage {
+            account: PublicKeyHash::from_b58(michelson_payload.1 .0.to_b58check().as_str())
+                .unwrap(),
+            token: Token::from(&michelson_payload.0.contents().0),
+            amount: michelson_payload.0.amount_as().unwrap(),
+        }
+    }
 }
 
 #[derive(Deserialize)]
 pub struct TransferContent {
     pub token: String,
     pub desination: PublicKeyHash,
-    // TODO: make this big int
     pub amount: u128,
 }
 
