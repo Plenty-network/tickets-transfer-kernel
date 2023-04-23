@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, PartialEq, Eq, Default)]
-pub struct Token(Vec<u8>);
+pub struct Token(pub Vec<u8>);
 
 impl Token {
     pub fn from(v: &Vec<u8>) -> Self {

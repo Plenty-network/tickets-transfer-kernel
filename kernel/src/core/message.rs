@@ -3,18 +3,18 @@ use crate::core::nonce::Nonce;
 use crate::core::public_key::PublicKey;
 use crate::core::public_key_hash::PublicKeyHash;
 use crate::core::signature::Signature;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tezos_smart_rollup::michelson::{ticket::BytesTicket, MichelsonContract, MichelsonPair};
 
 use super::token::Token;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub enum Message {
     Bridge(BridgeMessage),
     Transfer(TransferMessage),
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct BridgeMessage {
     pub account: PublicKeyHash,
     pub token: Token,
@@ -32,16 +32,16 @@ impl From<MichelsonPair<BytesTicket, MichelsonContract>> for BridgeMessage {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct TransferContent {
-    pub token: String,
-    pub desination: PublicKeyHash,
+    pub token: Token,
+    pub destination: PublicKeyHash,
     pub amount: u128,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Inner {
-    nonce: Nonce,
+    pub nonce: Nonce,
     pub content: TransferContent,
 }
 
@@ -52,10 +52,10 @@ impl Inner {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct TransferMessage {
-    pkey: PublicKey,
-    signature: Signature,
+    pub pkey: PublicKey,
+    pub signature: Signature,
     pub inner: Inner,
 }
 
@@ -74,11 +74,6 @@ impl TransferMessage {
     pub fn inner(&self) -> &Inner {
         &self.inner
     }
-
-    /// Returns the hash of the message
-    pub fn hash(&self) -> Blake2b {
-        self.inner.hash()
-    }
 }
 
 impl Inner {
@@ -90,8 +85,8 @@ impl Inner {
         let string = format!(
             "{}{}{}{}",
             nonce.to_string(),
-            content.token,
-            content.desination.to_string(),
+            content.token.to_hex_string(),
+            content.destination.to_string(),
             content.amount
         );
         Blake2b::from(string.as_bytes())

@@ -1,10 +1,10 @@
 use crate::core::error::*;
 use crate::core::hash::Blake2b;
 use crate::core::public_key::PublicKey;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tezos_crypto_rs::hash::Ed25519Signature;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub enum Signature {
     Ed25519(Ed25519Signature),
 }
@@ -31,10 +31,15 @@ impl Signature {
 
 #[cfg(test)]
 mod tests {
-    use tezos_crypto_rs::hash::Ed25519Signature;
+    use tezos_core::types::encoded::{self, Encoded};
+    use tezos_crypto_rs::hash::{Ed25519Signature, SeedEd25519};
 
     use super::Signature;
+    use crate::core::message::{Inner, Message, TransferContent, TransferMessage};
+    use crate::core::nonce::Nonce;
     use crate::core::public_key::PublicKey;
+    use crate::core::public_key_hash::PublicKeyHash;
+    use crate::core::token::Token;
 
     impl Signature {
         pub fn to_b58(&self) -> String {
@@ -50,6 +55,59 @@ mod tests {
                 None => Err("Cannot decode b58"),
             }
         }
+    }
+
+    #[test]
+    fn test_generate_and_verify() {
+        let (pk, sk) = SeedEd25519::from_base58_check(
+            "edsk31vznjHSSpGExDMHYASz45VZqXN4DPxvsa4hAyY8dHM28cZzp6",
+        )
+        .unwrap()
+        .keypair()
+        .unwrap();
+        let pk = PublicKey::from_b58(pk.to_string().as_str()).unwrap();
+        let pkh = PublicKeyHash::from(&pk);
+
+        println!("{}", pkh.to_string());
+
+        let inner = Inner {
+            nonce: Nonce(1),
+            content: TransferContent {
+                token: Token(vec![0x12, 0x34]),
+                destination: PublicKeyHash::from_b58("tz1Pe4aBjsW9ZGWaFXa47megxFD1LGGFAW3C")
+                    .unwrap(),
+                amount: 10,
+            },
+        };
+
+        let data = inner.hash();
+        let gen_sig = sk.sign(&[data.as_ref()]).unwrap();
+        let gen_sig = encoded::Signature::from_bytes(gen_sig.as_ref())
+            .unwrap()
+            .to_generic_signature()
+            .unwrap();
+        let ed25519_sig = encoded::Ed25519Signature::try_from(&gen_sig).unwrap();
+
+        let transfer_message = Message::Transfer(TransferMessage {
+            pkey: pk.clone(),
+            signature: Signature::from_b58(ed25519_sig.value()).unwrap(),
+            inner,
+        });
+
+        // Bytes for the external message (without the magic bytes and user byte)
+        println!(
+            "{}",
+            serde_json_wasm::to_vec(&transfer_message)
+                .unwrap()
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>()
+        );
+
+        assert!(Signature::from_b58(ed25519_sig.value())
+            .unwrap()
+            .verify(&pk, data.as_ref())
+            .is_ok());
     }
 
     #[test]

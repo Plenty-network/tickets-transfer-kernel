@@ -13,3 +13,6 @@ tezos_data_encoding = "0.4.4"
 ed25519-compact = { version ="2.0", default-features = false }
 tezos_crypto_rs = { version = "0.4", default-features = false }
 tezos-smart-rollup = { git = "https://gitlab.com/marigold/tezos", rev = "046281d4494560ed96796bd7ffe9053e573654f3" }
+
+[dev-dependencies]
+tezos-core = { git = "https://github.com/airgap-it/tezos-rust-sdk", features = ["ed25519"] }

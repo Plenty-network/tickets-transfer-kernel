@@ -28,10 +28,8 @@ pub enum Error {
     InvalidNonce,
     PathError(path::PathError),
     StateDeserializarion,
-    NotOwner,
-    FromBase58CheckError,
-    BigIntError,
     BinError(tezos_data_encoding::enc::BinError),
+    InvalidTransferAmount,
 }
 
 impl ToString for Error {
@@ -44,10 +42,8 @@ impl ToString for Error {
             Error::InvalidNonce => "Invalid nonce",
             Error::PathError(_) => "Invalid path",
             Error::StateDeserializarion => "State deserialization",
-            Error::NotOwner => "Not the owner of the tweet",
-            Error::FromBase58CheckError => "Cannot convert a string to a contract address",
-            Error::BigIntError => "Cannot deserialize big int",
             Error::BinError(_) => "Cannot serialize michelson to binary",
+            Error::InvalidTransferAmount => "Transferring more than the actual balance",
         };
         err.to_string()
     }

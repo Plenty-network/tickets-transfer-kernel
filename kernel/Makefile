@@ -4,13 +4,11 @@ build:
 	
 	smart-rollup-installer get-reveal-installer \
 	--upgrade-to ./target/wasm32-unknown-unknown/release/tickets_tz_kernel.wasm \
-	--output ./installer_output/installer.wasm \
+	--output ./installer_output/installer.hex \
 	--preimages-dir ./installer_output/preimages
+
+# prepare:
 	
-	wasm-strip ./installer_output/installer.wasm
 
-debug-installer:
-	octez-smart-rollup-wasm-debugger ./installer_output/installer.wasm --inputs ./debug/inputs.json --preimage-dir ./installer_output/preimages
-
-debug-main:
+debug-kernel:
 	octez-smart-rollup-wasm-debugger ./target/wasm32-unknown-unknown/release/tickets_tz_kernel.wasm --inputs ./debug/inputs.json

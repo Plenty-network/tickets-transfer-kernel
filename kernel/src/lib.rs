@@ -1,7 +1,7 @@
 use crate::core::error::ReadInputError;
 use crate::core::message::Message;
 use tezos_smart_rollup::{host::Runtime, kernel_entry};
-use utils::{process_bridge_message, read_input};
+use utils::{process_bridge_message, process_transfer_message, read_input};
 
 mod constants;
 mod core;
@@ -17,7 +17,7 @@ fn execute<Host: Runtime>(host: &mut Host) {
         Ok(message) => {
             match message {
                 Message::Bridge(b) => process_bridge_message(host, b).unwrap_or(()),
-                Message::Transfer(_) => host.write_debug("Transfer message"),
+                Message::Transfer(t) => process_transfer_message(host, t).unwrap_or(()),
             }
 
             execute(host)
