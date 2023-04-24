@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy": "ts-node ./src/"
+    "deploy": "ts-node ./src/deploy.ts",
+    "init": "ts-node ./src/initialise.ts"
   },
   "keywords": [],
   "author": "AnshuJalan",
