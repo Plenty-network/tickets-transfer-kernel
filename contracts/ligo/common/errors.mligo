@@ -2,3 +2,4 @@
 [@inline] let ticket_creation_error = 101n
 [@inline] let unauthorised_ticketer = 102n
 [@inline] let invalid_token = 103n
+[@inline] let sr_already_initialised = 104n

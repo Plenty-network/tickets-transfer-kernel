@@ -1,5 +1,6 @@
 { parameter
-    (or (pair %deposit (or (address %fa12) (pair %fa2 address nat)) nat)
+    (or (or (pair %deposit (or (address %fa12) (pair %fa2 address nat)) nat)
+            (address %initialise))
         (pair %release (ticket bytes) address)) ;
   storage address ;
   code { LAMBDA
@@ -30,51 +31,63 @@
          DIG 2 ;
          UNPAIR ;
          IF_LEFT
-           { DUP 2 ;
-             SWAP ;
-             UNPAIR ;
-             DUP ;
-             IF_LEFT
-               { DIG 5 ;
-                 DROP ;
-                 DUP 3 ;
+           { IF_LEFT
+               { DUP 2 ;
                  SWAP ;
-                 SELF_ADDRESS ;
-                 SENDER ;
-                 PAIR 4 ;
-                 DIG 5 ;
-                 SWAP ;
-                 EXEC }
-               { DIG 6 ;
-                 DROP ;
                  UNPAIR ;
-                 NIL (pair address nat nat) ;
-                 DUP 5 ;
+                 DUP ;
+                 IF_LEFT
+                   { DIG 5 ;
+                     DROP ;
+                     DUP 3 ;
+                     SWAP ;
+                     SELF_ADDRESS ;
+                     SENDER ;
+                     PAIR 4 ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC }
+                   { DIG 6 ;
+                     DROP ;
+                     UNPAIR ;
+                     NIL (pair address nat nat) ;
+                     DUP 5 ;
+                     DIG 3 ;
+                     SELF_ADDRESS ;
+                     PAIR 3 ;
+                     CONS ;
+                     SWAP ;
+                     SENDER ;
+                     PAIR 3 ;
+                     DIG 5 ;
+                     SWAP ;
+                     EXEC } ;
+                 DUG 2 ;
+                 PACK ;
+                 TICKET ;
+                 IF_NONE { PUSH nat 101 ; FAILWITH } {} ;
                  DIG 3 ;
-                 SELF_ADDRESS ;
-                 PAIR 3 ;
+                 CONTRACT (pair (ticket bytes) address) ;
+                 IF_NONE { PUSH nat 100 ; FAILWITH } {} ;
+                 PUSH mutez 0 ;
+                 SENDER ;
+                 DIG 3 ;
+                 PAIR ;
+                 TRANSFER_TOKENS ;
+                 NIL operation ;
+                 SWAP ;
                  CONS ;
                  SWAP ;
-                 SENDER ;
-                 PAIR 3 ;
-                 DIG 5 ;
-                 SWAP ;
-                 EXEC } ;
-             DUG 2 ;
-             PACK ;
-             TICKET ;
-             IF_NONE { PUSH nat 101 ; FAILWITH } {} ;
-             DIG 3 ;
-             CONTRACT (pair (ticket bytes) address) ;
-             IF_NONE { PUSH nat 100 ; FAILWITH } {} ;
-             PUSH mutez 0 ;
-             SENDER ;
-             DIG 3 ;
-             PAIR ;
-             TRANSFER_TOKENS ;
-             NIL operation ;
-             SWAP ;
-             CONS }
+                 CONS }
+               { DIG 2 ;
+                 DIG 3 ;
+                 DROP 2 ;
+                 PUSH address "KT1ThEdxfUcWUwqsdergy3QnbCWGHSUHeHJq" ;
+                 DIG 2 ;
+                 COMPARE ;
+                 NEQ ;
+                 IF { PUSH nat 104 ; FAILWITH } {} ;
+                 NIL operation } }
            { UNPAIR ;
              READ_TICKET ;
              SWAP ;
@@ -106,8 +119,8 @@
                  DIG 2 ;
                  SWAP ;
                  EXEC } ;
-             NIL operation } ;
-         SWAP ;
-         CONS ;
+             NIL operation ;
+             SWAP ;
+             CONS } ;
          PAIR } }
 

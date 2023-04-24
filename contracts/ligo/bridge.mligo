@@ -7,6 +7,7 @@ type storage = address (* Smart rollup address *)
 type parameter = 
     | Deposit of token * nat (* (token, token-amount) *)
     | Release of bytes ticket * address
+    | Initialise of address
 
 type return = operation list * storage
 
@@ -60,8 +61,18 @@ let release (_, (sr_ticket, destination): storage * ( bytes ticket * address)): 
 
     [transfer_op]
 
+(* One time call to set the rollup contract address *)
+let initialise (store, rollup_address: storage * address): storage =
+    let _ = 
+        if store <> ("KT1ThEdxfUcWUwqsdergy3QnbCWGHSUHeHJq" : address)
+            then failwith sr_already_initialised 
+            else unit 
+        in
+    rollup_address
+
 
 let main (action, store: parameter * storage): return = 
     match action with
     | Deposit p -> deposit (store, p), store
     | Release p -> release (store, p), store
+    | Initialise p -> [], initialise (store, p)
