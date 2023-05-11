@@ -2,7 +2,10 @@
 #include "./common/types.mligo"
 #include "./common/errors.mligo"
 
-type storage = address (* Smart rollup address *)
+type storage = { 
+    admin: address;
+    rollup: address; (* Smart rollup address *)
+} 
 
 type parameter = 
     | Deposit of token * nat (* (token, token-amount) *)
@@ -29,7 +32,7 @@ let deposit (store, (token, amount): storage * (token * nat)) : operation list =
         | None -> failwith ticket_creation_error
         | Some t -> t in
     let rollup_contract: rollup_entry_params contract = 
-        match Tezos.get_contract_opt store with
+        match Tezos.get_contract_opt store.rollup with
         | None -> failwith invalid_contract
         | Some c -> c in
     let rollup_op = Tezos.transaction (sr_ticket, Tezos.get_sender ()) 0mutez rollup_contract in
@@ -63,12 +66,8 @@ let release (_, (sr_ticket, destination): storage * ( bytes ticket * address)): 
 
 (* One time call to set the rollup contract address *)
 let initialise (store, rollup_address: storage * address): storage =
-    let _ = 
-        if store <> ("KT1ThEdxfUcWUwqsdergy3QnbCWGHSUHeHJq" : address)
-            then failwith sr_already_initialised 
-            else unit 
-        in
-    rollup_address
+    let _ = if Tezos.get_sender () <> store.admin then failwith not_authorised else unit in
+    { store with rollup = rollup_address; }
 
 
 let main (action, store: parameter * storage): return = 

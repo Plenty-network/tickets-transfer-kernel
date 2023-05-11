@@ -2,7 +2,7 @@
     (or (or (pair %deposit (or (address %fa12) (pair %fa2 address nat)) nat)
             (address %initialise))
         (pair %release (ticket bytes) address)) ;
-  storage address ;
+  storage (pair (address %admin) (address %rollup)) ;
   code { LAMBDA
            (pair address address address nat)
            operation
@@ -67,6 +67,7 @@
                  TICKET ;
                  IF_NONE { PUSH nat 101 ; FAILWITH } {} ;
                  DIG 3 ;
+                 CDR ;
                  CONTRACT (pair (ticket bytes) address) ;
                  IF_NONE { PUSH nat 100 ; FAILWITH } {} ;
                  PUSH mutez 0 ;
@@ -82,11 +83,13 @@
                { DIG 2 ;
                  DIG 3 ;
                  DROP 2 ;
-                 PUSH address "KT1ThEdxfUcWUwqsdergy3QnbCWGHSUHeHJq" ;
-                 DIG 2 ;
+                 DUP 2 ;
+                 CAR ;
+                 SENDER ;
                  COMPARE ;
                  NEQ ;
                  IF { PUSH nat 104 ; FAILWITH } {} ;
+                 UPDATE 2 ;
                  NIL operation } }
            { UNPAIR ;
              READ_TICKET ;

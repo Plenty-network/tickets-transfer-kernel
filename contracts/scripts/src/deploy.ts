@@ -18,7 +18,10 @@ tezos.setProvider({
     // Deploy
     const op = await tezos.contract.originate({
       code,
-      storage: "KT1ThEdxfUcWUwqsdergy3QnbCWGHSUHeHJq",
+      storage: {
+        admin: "tz1R1YEHNEjF8qY9uLwyCUbUrczP6VVa9qdp",
+        rollup: "tz1R1YEHNEjF8qY9uLwyCUbUrczP6VVa9qdp",
+      },
     });
     await op.confirmation(1);
 
