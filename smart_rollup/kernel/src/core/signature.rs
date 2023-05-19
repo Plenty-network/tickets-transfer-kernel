@@ -35,6 +35,9 @@ mod tests {
     use tezos_crypto_rs::hash::{Ed25519Signature, SeedEd25519};
 
     use super::Signature;
+    use crate::constants::{
+        DAPP_URL, MICHELINE_EXPRESSION_BYTE, MICHELINE_STRING_BYTE, TEZOS_SIGNED_MESSAGE,
+    };
     use crate::core::message::{Inner, Message, TransferContent, TransferMessage};
     use crate::core::nonce::Nonce;
     use crate::core::public_key::PublicKey;
@@ -80,8 +83,29 @@ mod tests {
             },
         };
 
-        let data = inner.hash();
-        let gen_sig = sk.sign(&[data.as_ref()]).unwrap();
+        let timestamp = String::from("2023-05-19T05:45:50.473Z");
+
+        let bytes = vec![
+            TEZOS_SIGNED_MESSAGE.to_string(),
+            DAPP_URL.to_string(),
+            timestamp.clone(),
+            inner.hash().to_string(),
+        ]
+        .join(" ")
+        .as_bytes()
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect::<String>();
+        let bytes_length = format!("{:08x}", bytes.len());
+        let data = vec![
+            MICHELINE_EXPRESSION_BYTE.to_string(),
+            MICHELINE_STRING_BYTE.to_string(),
+            bytes_length,
+            bytes,
+        ]
+        .join("");
+
+        let gen_sig = sk.sign(&[data.as_bytes()]).unwrap();
         let gen_sig = encoded::Signature::from_bytes(gen_sig.as_ref())
             .unwrap()
             .to_generic_signature()
@@ -90,6 +114,7 @@ mod tests {
 
         let transfer_message = Message::Transfer(TransferMessage {
             pkey: pk.clone(),
+            timestamp: timestamp.clone(),
             signature: Signature::from_b58(ed25519_sig.value()).unwrap(),
             inner,
         });

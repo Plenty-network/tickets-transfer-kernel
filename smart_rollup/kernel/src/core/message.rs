@@ -56,6 +56,7 @@ impl Inner {
 pub struct TransferMessage {
     pub pkey: PublicKey,
     pub signature: Signature,
+    pub timestamp: String,
     pub inner: Inner,
 }
 
