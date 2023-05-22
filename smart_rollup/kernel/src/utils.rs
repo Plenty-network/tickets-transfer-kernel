@@ -92,7 +92,8 @@ pub fn process_transfer_message<Host: Runtime>(
     .iter()
     .map(|byte| format!("{:02x}", byte))
     .collect::<String>();
-    let bytes_length = format!("{:08x}", bytes.len());
+    let bytes_length = format!("{:08x}", (bytes.len() / 2));
+
     let data = vec![
         MICHELINE_EXPRESSION_BYTE.to_string(),
         MICHELINE_STRING_BYTE.to_string(),
@@ -101,7 +102,15 @@ pub fn process_transfer_message<Host: Runtime>(
     ]
     .join("");
 
-    sig.verify(pk, data.as_ref())?;
+    fn hex_to_string(hex: &str) -> Vec<u8> {
+        let bytes = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+            .collect::<Vec<u8>>();
+        bytes
+    }
+
+    sig.verify(pk, &hex_to_string(data.as_str()))?;
 
     let pkh = PublicKeyHash::from(pk);
     let nonce = Nonce(read_nonce(host, &pkh)?);

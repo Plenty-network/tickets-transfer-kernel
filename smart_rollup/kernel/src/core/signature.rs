@@ -71,6 +71,8 @@ mod tests {
         let pk = PublicKey::from_b58(pk.to_string().as_str()).unwrap();
         let pkh = PublicKeyHash::from(&pk);
 
+        println!("{}", sk.to_string());
+
         println!("{}", pkh.to_string());
 
         let inner = Inner {
@@ -79,7 +81,7 @@ mod tests {
                 token: Token(vec![0x12, 0x34]),
                 destination: PublicKeyHash::from_b58("tz1Pe4aBjsW9ZGWaFXa47megxFD1LGGFAW3C")
                     .unwrap(),
-                amount: 10,
+                amount: 10000000,
             },
         };
 
@@ -96,7 +98,7 @@ mod tests {
         .iter()
         .map(|byte| format!("{:02x}", byte))
         .collect::<String>();
-        let bytes_length = format!("{:08x}", bytes.len());
+        let bytes_length = format!("{:08x}", bytes.len() / 2);
         let data = vec![
             MICHELINE_EXPRESSION_BYTE.to_string(),
             MICHELINE_STRING_BYTE.to_string(),
@@ -105,12 +107,34 @@ mod tests {
         ]
         .join("");
 
-        let gen_sig = sk.sign(&[data.as_bytes()]).unwrap();
+        println!("{:?}", inner.hash().to_string());
+        println!("{:?}", inner.hash().as_ref());
+
+        println!("{}", data);
+
+        fn hex_to_string(hex: &str) -> Vec<u8> {
+            let bytes = (0..hex.len())
+                .step_by(2)
+                .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+                .collect::<Vec<u8>>();
+            bytes
+        }
+
+        let x: &[u8] = &hex_to_string(data.as_str());
+
+        println!("{:?}", x);
+
+        let gen_sig = sk.sign([x]).unwrap();
         let gen_sig = encoded::Signature::from_bytes(gen_sig.as_ref())
             .unwrap()
             .to_generic_signature()
             .unwrap();
+
+        println!("{}", gen_sig.value());
+
         let ed25519_sig = encoded::Ed25519Signature::try_from(&gen_sig).unwrap();
+
+        println!("{}", ed25519_sig.value().to_string());
 
         let transfer_message = Message::Transfer(TransferMessage {
             pkey: pk.clone(),
@@ -131,8 +155,13 @@ mod tests {
 
         assert!(Signature::from_b58(ed25519_sig.value())
             .unwrap()
-            .verify(&pk, data.as_ref())
+            .verify(&pk, x)
             .is_ok());
+
+        // assert!(Signature::from_b58("edsigtpKbZVYcJmRtzpyAhuvdJVNz3BsDEM8j7SRpe8x7EkLjtVBJ2oYnJMAxEHE2rhfdDbWAr7pQxXN8Swm7zfVkVBgepD8cUd")
+        //     .unwrap()
+        //     .verify(&pk, data.as_ref())
+        //     .is_err());
     }
 
     #[test]
