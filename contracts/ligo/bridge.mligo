@@ -64,7 +64,7 @@ let release (_, (sr_ticket, destination): storage * ( bytes ticket * address)): 
 
     [transfer_op]
 
-(* One time call to set the rollup contract address *)
+(* Allows the admin to set the rollup contract address *)
 let initialise (store, rollup_address: storage * address): storage =
     let _ = if Tezos.get_sender () <> store.admin then failwith not_authorised else unit in
     { store with rollup = rollup_address; }
